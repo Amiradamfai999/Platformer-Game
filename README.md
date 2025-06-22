@@ -1,1 +1,94 @@
-# Pong-Game
+# Platformer-Game
+import pygame
+import sys
+
+# Initialize Pygame
+pygame.init()
+
+# Constants
+WIDTH, HEIGHT = 800, 600
+PLAYER_WIDTH, PLAYER_HEIGHT = 50, 50
+PLAYER_COLOR = (50, 150, 255)
+BG_COLOR = (30, 30, 30)
+PLATFORM_COLOR = (100, 255, 100)
+FPS = 60
+GRAVITY = 0.7
+JUMP_VELOCITY = -15
+MOVE_SPEED = 7
+
+# Set up display
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Simple Platformer")
+
+# Define platforms
+platforms = [
+    pygame.Rect(0, HEIGHT - 40, WIDTH, 40),
+    pygame.Rect(200, 450, 150, 20),
+    pygame.Rect(500, 350, 200, 20),
+    pygame.Rect(100, 250, 120, 20),
+]
+
+# Player setup
+player = pygame.Rect(100, HEIGHT - PLAYER_HEIGHT - 50, PLAYER_WIDTH, PLAYER_HEIGHT)
+player_vel_y = 0
+on_ground = False
+
+clock = pygame.time.Clock()
+
+while True:
+    screen.fill(BG_COLOR)
+    dt = clock.tick(FPS)
+
+    # Input handling
+    keys = pygame.key.get_pressed()
+    dx = 0
+    if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+        dx = -MOVE_SPEED
+    if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+        dx = MOVE_SPEED
+
+    # Horizontal movement
+    player.x += dx
+
+    # Collide with platforms horizontally
+    for plat in platforms:
+        if player.colliderect(plat):
+            if dx > 0:
+                player.right = plat.left
+            elif dx < 0:
+                player.left = plat.right
+
+    # Gravity
+    player_vel_y += GRAVITY
+    player.y += int(player_vel_y)
+
+    # Collide with platforms vertically
+    on_ground = False
+    for plat in platforms:
+        if player.colliderect(plat):
+            if player_vel_y > 0:
+                player.bottom = plat.top
+                player_vel_y = 0
+                on_ground = True
+            elif player_vel_y < 0:
+                player.top = plat.bottom
+                player_vel_y = 0
+
+    # Jumping
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+        # Allow jump only if on ground
+        if event.type == pygame.KEYDOWN and (event.key == pygame.K_SPACE or event.key == pygame.K_w or event.key == pygame.K_UP):
+            if on_ground:
+                player_vel_y = JUMP_VELOCITY
+
+    # Draw platforms
+    for plat in platforms:
+        pygame.draw.rect(screen, PLATFORM_COLOR, plat)
+
+    # Draw player
+    pygame.draw.rect(screen, PLAYER_COLOR, player)
+
+    pygame.display.flip()
